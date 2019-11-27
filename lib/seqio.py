@@ -1,11 +1,13 @@
 import re, os
 
 class Fasta:
-    def __init__(self, f):
-        if os.path.isfile(f):
-            Fasta.parse_file(self, f)
+    def __init__(self, data=None):
+        if not data:
+            pass
+        elif os.path.isfile(data):
+            Fasta.parse_file(self, data)
         else:
-            Fasta.parse_string(self, f)
+            Fasta.parse_string(self, data)
 
     def parse_string(self, stringContent):
         """parse sequence file, get first two reads"""
