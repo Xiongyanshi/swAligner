@@ -40,9 +40,11 @@ def main():
     parser.add_argument('-i','--input', required=True,
                         help="""file name of input fasta,
                               only first 2 records will be read in.""")
-    parser.add_argument('-o','--output',
+    parser.add_argument('-o','--output', required=False
                         help='file name of alignment result(in fasta format)')
-
+    parser.add_argument('-m','--matrix', requires=False,
+                        default='./lib/dna_default.mat',
+                        help='file name of base substitution matrix')
     args = parser.parse_args()
     args = vars(args)
     infile = args['input']
