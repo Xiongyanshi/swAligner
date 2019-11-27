@@ -1,11 +1,14 @@
-import re
+import re, os
 
-class FastaIO:
-    def __init__(self):
-        pass
+class Fasta:
+    def __init__(self, f):
+        if os.path.isfile(f):
+            Fasta.parse_file(self, f)
+        else:
+            Fasta.parse_string(self, f)
 
-    def parse_String(self, stringContent):
-        """parse sequence file, get two reads"""
+    def parse_string(self, stringContent):
+        """parse sequence file, get first two reads"""
         try:
             # more than 2 > in fasta file?
             name1, seq1, name2, seq2 = re.match(
@@ -29,8 +32,8 @@ class FastaIO:
 
         return self
 
-    def parse_File(self, filename):
-        return FastaIO.parse_String(open(filename).read())
+    def parse_file(self, filename):
+        return Fasta.parse_string(self, open(filename).read())
 
     def to_file(self, outfilename):
         with open(outfilename, 'w') as handle:
