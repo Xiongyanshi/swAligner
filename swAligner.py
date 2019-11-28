@@ -76,7 +76,7 @@ class Align:
         for path in pathcode:
             if path == '0':
                 top    += self.seq1[i]
-                middle += '|'
+                middle += '|' if self.seq1[i] == self.seq2[j] else '*'
                 bottom += self.seq2[j]
                 i += 1
                 j += 1
@@ -120,40 +120,35 @@ def main():
     parser = argparse.ArgumentParser(description=descriptionStr)
     parser.add_argument('-i','--input', required=False,
                         default='./demo/input1.fa',
-                        help="""file name of input fasta,
-                              only first 2 records will be read in.""")
-    parser.add_argument('-o','--output', required=False,
-                        help='file name of alignment result(in fasta format)')
+                        help='file name of input fasta, parse first 2 records')
+    parser.add_argument('-o','--output', required=False, default=None,
+                        help='file name of alignment result (fasta)')
     parser.add_argument('-m','--submat', required=False,
                         default='./lib/dna_default.mat',
                         help='file name of base substitution matrix')
-    parser.add_argument('-r', '--reads', required=False,
-                        default=None,
-                        help='two reads seperated by ","')
+    parser.add_argument('-r', '--reads', required=False, default=None,
+                        help='two reads seperated by "," (will not from file)')
 
     args = vars(parser.parse_args())
-
     submatfile = args['submat']
     submat = readmat(submatfile)
-
     if args['reads']:
         seq1, seq2 = args['reads'].split(',')
-        align = Align(seq1, seq2, submat)
-        align.printalign()
-        return
-
-    infile = args['input']
-    infasta = Fasta(infile)
-
-    outfile = args['output']
-    outfasta = Fasta(outfile)
-
-    name1, seq1 = infasta.name1, infasta.seq1
-    name2, seq2 = infasta.name2, infasta.seq2
-
+    else:
+        infasta = Fasta(args['input'])
+        seq1, seq2 = infasta.seq1, infasta.seq2
     align = Align(seq1, seq2, submat)
     align.printalign()
-
+    if args['output']:
+        outfile = args['output']
+        outfasta = Fasta()
+        outfasta.from_string('>%s\n%s\n>%s\n%s\n' % (
+                               infasta.name1 + '_aligned',
+                               align.alignedseq1,
+                               infasta.name2 + '_aligned',
+                               align.alignedseq2))
+        outfasta.to_file(outfile)
+    return 0
 
 if __name__ == '__main__':
     main()

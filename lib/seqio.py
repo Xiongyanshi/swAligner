@@ -5,11 +5,11 @@ class Fasta:
         if not data:
             pass
         elif os.path.isfile(data):
-            Fasta.parse_file(self, data)
+            Fasta.from_file(self, data)
         else:
-            Fasta.parse_string(self, data)
+            Fasta.from_string(self, data)
 
-    def parse_string(self, stringContent):
+    def from_string(self, stringContent):
         """parse sequence file, get first two reads"""
         try:
             # more than 2 > in fasta file?
@@ -34,8 +34,8 @@ class Fasta:
 
         return self
 
-    def parse_file(self, filename):
-        return Fasta.parse_string(self, open(filename).read())
+    def from_file(self, filename):
+        return Fasta.from_string(self, open(filename).read())
 
     def __repr__(self):
         return '>%s\n%s\n>%s\n%s' % (self.name1, self.seq1,
@@ -43,7 +43,7 @@ class Fasta:
 
     def to_file(self, outfilename):
         with open(outfilename, 'w') as handle:
-            handle.write('>%s\n%s\n>%s\n%s' % (self.name1, self.seq1,
+            handle.write('>%s\n%s\n>%s\n%s\n' % (self.name1, self.seq1,
                                                self.name2, self.seq2))
 
 def main():
