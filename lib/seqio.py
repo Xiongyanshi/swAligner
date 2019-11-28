@@ -21,8 +21,8 @@ class Fasta:
             name1, seq1, name2, seq2 = re.match(
                                  r'^>(.+?)\n([\w\W]+?)\n>(.+?)\n([\w\W]+)',
                                  stringContent).groups()
-        seq1 = ''.join(seq1.splitlines())
-        seq2 = ''.join(seq2.splitlines())
+        seq1 = ''.join(seq1.splitlines()).upper()
+        seq2 = ''.join(seq2.splitlines()).upper()
 
         self.name1 = name1
         self.seq1  = seq1
@@ -37,8 +37,20 @@ class Fasta:
     def parse_file(self, filename):
         return Fasta.parse_string(self, open(filename).read())
 
+    def __repr__(self):
+        return '>%s\n%s\n>%s\n%s' % (self.name1, self.seq1,
+                                     self.name2, self.seq2)
+
     def to_file(self, outfilename):
         with open(outfilename, 'w') as handle:
             handle.write('>%s\n%s\n>%s\n%s' % (self.name1, self.seq1,
                                                self.name2, self.seq2))
 
+def main():
+    fasta1 = Fasta('../demo/input1.fa')
+    print(fasta1)
+    fasta2 = Fasta('../demo/input2.fa')
+    print(fasta2)
+
+if __name__ == '__main__':
+    main()
