@@ -66,38 +66,49 @@ class Align:
         i = i+1
         j = j+1
 
-        leftsize = max(i, j)
-        top = '{:>{leftsize}}'.format(self.seq1[1:i], leftsize=leftsize)
-        middle  = ' ' * leftsize
+        leftsize = max(i, j) - 1       # the length of left unaligned sequence
+                                       # -1 : cut '-' place
+        top    = '{:>{leftsize}}'.format(self.seq1[1:i], leftsize=leftsize)
+        middle = ' ' * leftsize
         bottom = '{:>{leftsize}}'.format(self.seq2[1:j], leftsize=leftsize)
 
+        # join with alignment result
         for path in pathcode:
             if path == '0':
-                top += self.seq1[i]
+                top    += self.seq1[i]
                 middle += '|'
                 bottom += self.seq2[j]
                 i += 1
                 j += 1
             if path == '1':
-                top += '-'
+                top    += '-'
                 middle += ' '
                 bottom += self.seq2[j]
                 j += 1
             if path == '2':
-                top += self.seq1[i]
+                top    += self.seq1[i]
                 middle += ' '
                 bottom += '-'
                 i += 1
+
+        # tail with unaligned sequence at right side
         m, n = self.end
         m += 1
         n += 1
         rightsize = max(len(self.seq1) - m, len(self.seq2) - n)
-        top += '{:<{rightsize}}'.format(self.seq1[m:], rightsize=rightsize)
+        top    += '{:<{rightsize}}'.format(self.seq1[m:], rightsize=rightsize)
         middle += ' ' * rightsize
         bottom += '{:<{rightsize}}'.format(self.seq2[n:], rightsize=rightsize)
 
+        top = top.replace(' ', '-')
+        bottom = bottom.replace(' ', '-')
         res = "%s\n%s\n%s\n" % (top, middle, bottom)
+        self.alignedseq1 = top
+        self.alignedseq2 = bottom
         self.printable = res
+
+    def printalign(self):
+        print('Alignment:\n%s' % self.printable)
 
     def __repr__(self):
         return self.printable
@@ -129,18 +140,7 @@ def main():
     name2, seq2 = infasta.name2, infasta.seq2
 
     align = Align(seq1, seq2, submat)
-    #print(align.scoremat)
-    #print()
-    #print(align.tracemat)
-    #print()
-    #print(align.maxscore)
-    #print(align.maxscorei)
-    print(align.pathcode)
-    #print(align.start)
-    #print(align.end)
-    print(align.seq1)
-    print(align.seq2)
-    print(align)
+    align.printalign()
 
 
 if __name__ == '__main__':
