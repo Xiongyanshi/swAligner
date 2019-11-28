@@ -15,8 +15,8 @@ def theta(a, b, submat):
 
 class Align:
     def __init__(self, seq1, seq2, submat):
-        self.seq1 = '-' + seq1
-        self.seq2 = '-' + seq2
+        self.seq1 = '-' + seq1.upper()
+        self.seq2 = '-' + seq2.upper()
         self.submat = submat
         Align.__buildmat(self)
         Align.__traceback(self)
@@ -108,7 +108,8 @@ class Align:
         self.printable = res
 
     def printalign(self):
-        print('Alignment:\n%s' % self.printable)
+        print('seq1:%s\nseq2:%s\n\n%s' % (
+                         self.seq1[1:], self.seq2[1:], self.printable))
 
     def __repr__(self):
         return self.printable
@@ -117,7 +118,8 @@ class Align:
 def main():
     descriptionStr = 'Smith-Waterman pairwise alignment(toy) by Yanshi Xiong'
     parser = argparse.ArgumentParser(description=descriptionStr)
-    parser.add_argument('-i','--input', required=True,
+    parser.add_argument('-i','--input', required=False,
+                        default='./demo/input1.fa',
                         help="""file name of input fasta,
                               only first 2 records will be read in.""")
     parser.add_argument('-o','--output', required=False,
@@ -125,16 +127,26 @@ def main():
     parser.add_argument('-m','--submat', required=False,
                         default='./lib/dna_default.mat',
                         help='file name of base substitution matrix')
+    parser.add_argument('-r', '--reads', required=False,
+                        default=None,
+                        help='two reads seperated by ","')
+
     args = vars(parser.parse_args())
+
+    submatfile = args['submat']
+    submat = readmat(submatfile)
+
+    if args['reads']:
+        seq1, seq2 = args['reads'].split(',')
+        align = Align(seq1, seq2, submat)
+        align.printalign()
+        return
 
     infile = args['input']
     infasta = Fasta(infile)
 
     outfile = args['output']
     outfasta = Fasta(outfile)
-
-    submatfile = args['submat']
-    submat = readmat(submatfile)
 
     name1, seq1 = infasta.name1, infasta.seq1
     name2, seq2 = infasta.name2, infasta.seq2
