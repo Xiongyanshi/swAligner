@@ -1,43 +1,74 @@
+#! /usr/bin/env python
+
+"""
+A Smith-Waterman alignment program.
+by Yanshi Xiong.
+"""
+
 import argparse
 import numpy as np
 from lib.seqio import Fasta
 from lib.readmat import readmat
+from lib.readgap import readgap
+
 
 def theta(a, b, submat):
     """return score of two bases"""
     a = a.upper()
     b = b.upper()
-    if '-' in (a, b):
-        res = -2
-    else:
-        res = submat[a][b]
+    res = submat[a][b]
     return res
 
+def tailn(l, x):
+    """
+    return the number of continuous element x from the right side of sequence l
+    tail([0,1,2,3,4,3,3,3,3], 3) = 4
+    """
+    count = 0
+    for i in list(l)[::-1]:
+        if i != x:
+            break
+        count += 1
+    return count
+
 class Align:
-    def __init__(self, seq1, seq2, submat):
+    def __init__(self, seq1, seq2, submat, gap_open, gap_extend):
         self.seq1 = '-' + seq1.upper()
         self.seq2 = '-' + seq2.upper()
         self.submat = submat
+        self.gap_open = gap_open
+        self.gap_extend = gap_extend
         Align.__buildmat(self)
         Align.__traceback(self)
         Align.__makeprintable(self)
 
     def __buildmat(self):
-        self.scoremat = np.zeros((len(self.seq1), len(self.seq2)), dtype=int)
-        self.tracemat = np.zeros((len(self.seq1), len(self.seq2)), dtype=int)
+        self.scoremat = np.empty([len(self.seq1), len(self.seq2)],
+                                 dtype=np.int32)
+        self.tracemat = np.empty([len(self.seq1), len(self.seq2)],
+                                 dtype=np.int8)
         for i, p in enumerate(self.seq1):
             for j, q in enumerate(self.seq2):
                 if i == 0:
-                    self.scoremat[i, j] == 0
-                    self.tracemat[i, j] == 1
+                    self.scoremat[i, j] = 0
+                    self.tracemat[i, j] = 1
                     continue
                 if j == 0:
-                    self.scoremat[i, j] == 0
-                    self.tracemat[i, j] == 2
+                    self.scoremat[i, j] = 0
+                    self.tracemat[i, j] = 2
                     continue
+
                 d = self.scoremat[i-1, j-1] + theta(p, q, self.submat)
-                l = self.scoremat[i, j-1] + theta('-', q, self.submat)
-                u = self.scoremat[i-1, j] + theta(p,'-', self.submat)
+
+                # the length of gap ?
+                lgaplen = tailn(self.tracemat[i,:j], 1)
+                lgap_penalty = lgaplen * self.gap_open + self.gap_extend
+                l = self.scoremat[i, j-1] + lgap_penalty
+
+                ugaplen = tailn(self.tracemat[:i,j], 2)
+                ugap_penalty = ugaplen * self.gap_open + self.gap_extend
+                u = self.scoremat[i-1, j] + ugap_penalty
+
                 self.scoremat[i, j] = max(d,l,u,0)
                 self.tracemat[i, j] = [d, l, u, 0].index(max(d,l,u,0))
 
@@ -48,6 +79,7 @@ class Align:
         self.pathcode = ''
         i, j = self.maxscorei   # this is where we start to traceback
         while self.scoremat[i,j] != 0:
+            #print('[%s,%s]>' % (i, j), end='')
             direction = str(self.tracemat[i,j])
             self.pathcode = direction + self.pathcode
             if direction == '0':
@@ -57,6 +89,12 @@ class Align:
                 j -= 1
             if direction == '2':
                 i -= 1
+            if direction == '3':
+                print('wrong')
+                print(self.scoremat)
+                print(self.tracemat)
+                print(i, j)
+
         self.start = [i,j]
         self.end = self.maxscorei
 
@@ -107,9 +145,15 @@ class Align:
         self.alignedseq2 = bottom
         self.printable = res
 
-    def printalign(self):
+    def print_align(self):
         print('seq1:%s\nseq2:%s\n\n%s' % (
                          self.seq1[1:], self.seq2[1:], self.printable))
+
+    def print_scoremat(self):
+        print(self.scoremat)
+
+    def print_tracemat(self):
+        print(self.tracemat)
 
     def __repr__(self):
         return self.printable
@@ -121,24 +165,40 @@ def main():
     parser.add_argument('-i','--input', required=False,
                         default='./demo/input1.fa',
                         help='file name of input fasta, parse first 2 records')
-    parser.add_argument('-o','--output', required=False, default=None,
+    parser.add_argument('-o','--output', required=False,
+                        default=None,
                         help='file name of alignment result (fasta)')
     parser.add_argument('-m','--submat', required=False,
-                        default='./lib/dna_default.mat',
+                        default='./lib/dna_sub.default.mat',
                         help='file name of base substitution matrix')
-    parser.add_argument('-r', '--reads', required=False, default=None,
+    parser.add_argument('-r', '--reads', required=False,
+                        default=None,
                         help='two reads seperated by "," (will not from file)')
+    parser.add_argument('-g', '--gap', required=False,
+                        default='./lib/dna_gap.default.txt',
+                        help='gap penalty plan')
 
     args = vars(parser.parse_args())
-    submatfile = args['submat']
-    submat = readmat(submatfile)
+
+    # substitution matrix and gap penalty are must.
+    submat     = readmat(args['submat'])
+    gap_open   = readgap(args['gap'])['gap_open']
+    gap_extend = readgap(args['gap'])['gap_extend']
+
+    # get input
     if args['reads']:
         seq1, seq2 = args['reads'].split(',')
     else:
         infasta = Fasta(args['input'])
         seq1, seq2 = infasta.seq1, infasta.seq2
-    align = Align(seq1, seq2, submat)
-    align.printalign()
+
+    # ready to go
+    align = Align(seq1, seq2, submat, gap_open, gap_extend)
+    align.print_align()
+    #align.print_scoremat()
+    #align.print_tracemat()
+
+    # if writing to file
     if args['output']:
         outfile = args['output']
         outfasta = Fasta()
@@ -148,6 +208,7 @@ def main():
                                infasta.name2 + '_aligned',
                                align.alignedseq2))
         outfasta.to_file(outfile)
+
     return 0
 
 if __name__ == '__main__':
