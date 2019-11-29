@@ -12,16 +12,9 @@ from lib.readmat import readmat
 from lib.readgap import readgap
 
 
-def theta(a, b, submat):
-    """return score of two bases"""
-    a = a.upper()
-    b = b.upper()
-    res = submat[a][b]
-    return res
-
 def tailn(l, x):
     """
-    return the number of continuous element x from the right side of sequence l
+    return the number of continuous element x from the right side of l
     tail([0,1,2,3,4,3,3,3,3], 3) = 4
     """
     count = 0
@@ -58,16 +51,18 @@ class Align:
                     self.tracemat[i, j] = 2
                     continue
 
-                d = self.scoremat[i-1, j-1] + theta(p, q, self.submat)
+                # from diagnoal
+                d = self.scoremat[i-1, j-1] + self.submat[p][q]
 
-                # the length of gap ?
+                # from left side
                 lgaplen = tailn(self.tracemat[i,:j], 1)
                 lgap_penalty = lgaplen * self.gap_open + self.gap_extend
-                l = self.scoremat[i, j-1] + lgap_penalty
+                l = self.scoremat[i, j-1] + lgap_penalty + self.submat[p][q]
 
+                # from up side
                 ugaplen = tailn(self.tracemat[:i,j], 2)
                 ugap_penalty = ugaplen * self.gap_open + self.gap_extend
-                u = self.scoremat[i-1, j] + ugap_penalty
+                u = self.scoremat[i-1, j] + ugap_penalty + self.submat[p][q]
 
                 self.scoremat[i, j] = max(d,l,u,0)
                 self.tracemat[i, j] = [d, l, u, 0].index(max(d,l,u,0))
@@ -89,12 +84,11 @@ class Align:
                 j -= 1
             if direction == '2':
                 i -= 1
-            if direction == '3':
+            if direction == '3':   # this is not in plan.
                 print('wrong')
                 print(self.scoremat)
                 print(self.tracemat)
                 print(i, j)
-
         self.start = [i,j]
         self.end = self.maxscorei
 
@@ -104,13 +98,13 @@ class Align:
         i = i+1
         j = j+1
 
-        leftsize = max(i, j) - 1       # the length of left unaligned sequence
-                                       # -1 : cut '-' place
+        # the unaligned seq at left side
+        leftsize = max(i, j) - 1                   # -1 : cut '-' place
         top    = '{:>{leftsize}}'.format(self.seq1[1:i], leftsize=leftsize)
         middle = ' ' * leftsize
         bottom = '{:>{leftsize}}'.format(self.seq2[1:j], leftsize=leftsize)
 
-        # join with alignment result
+        # connect with aligned body
         for path in pathcode:
             if path == '0':
                 top    += self.seq1[i]
@@ -140,14 +134,13 @@ class Align:
 
         top = top.replace(' ', '-')
         bottom = bottom.replace(' ', '-')
-        res = "%s\n%s\n%s\n" % (top, middle, bottom)
+        res = "\n%s\n%s\n%s\n" % (top, middle, bottom)
         self.alignedseq1 = top
         self.alignedseq2 = bottom
         self.printable = res
 
     def print_align(self):
-        print('seq1:%s\nseq2:%s\n\n%s' % (
-                         self.seq1[1:], self.seq2[1:], self.printable))
+        print(self.printable)
 
     def print_scoremat(self):
         print(self.scoremat)
@@ -168,12 +161,12 @@ def main():
     parser.add_argument('-o','--output', required=False,
                         default=None,
                         help='file name of alignment result (fasta)')
+    parser.add_argument('-r', '--reads', required=False,
+                        default=None,
+                        help='two reads seperated by "," (skip open file)')
     parser.add_argument('-m','--submat', required=False,
                         default='./lib/dna_sub.default.mat',
                         help='file name of base substitution matrix')
-    parser.add_argument('-r', '--reads', required=False,
-                        default=None,
-                        help='two reads seperated by "," (will not from file)')
     parser.add_argument('-g', '--gap', required=False,
                         default='./lib/dna_gap.default.txt',
                         help='gap penalty plan')
