@@ -64,14 +64,14 @@ class Align:
                 d = self.scoremat[i-1, j-1] + self.submat[p][q]
 
                 # from left side
-                lgaplen = tailn(self.tracemat[i,:j], 1) + 1   # +1 for itself
-                lgap_penalty = lgaplen * self.gap_extend + self.gap_open
-                l = self.scoremat[i, j-1] + lgap_penalty + self.submat[p][q]
+                lgap_len = tailn(self.tracemat[i,:j], 1) + 1   # +1 for itself
+                lgap_penalty = lgap_len * self.gap_extend + self.gap_open
+                l = self.scoremat[i, j-1] + lgap_penalty
 
                 # from up side
-                ugaplen = tailn(self.tracemat[:i,j], 2) + 1   # +1 for itself
-                ugap_penalty = ugaplen * self.gap_extend + self.gap_open
-                u = self.scoremat[i-1, j] + ugap_penalty + self.submat[p][q]
+                ugap_len = tailn(self.tracemat[:i,j], 2) + 1   # +1 for itself
+                ugap_penalty = ugap_len * self.gap_extend + self.gap_open
+                u = self.scoremat[i-1, j] + ugap_penalty
 
                 if self.algo == 'sw':
                     self.scoremat[i, j] = max(d,l,u,0)
@@ -102,7 +102,7 @@ class Align:
         self.pathcode = ''
         i, j = self.end
         while not reachEnd(self, i, j):
-            print('[%s,%s]> ' % (i, j), end='')
+            print('[%s,%s]< ' % (i, j), end='')
             direction = str(self.tracemat[i,j])
             self.pathcode = direction + self.pathcode
             if direction == '0':
@@ -126,13 +126,14 @@ class Align:
         j = j+1
 
         # unaligned sequence at left side
-        leftsize = max(i, j) - 1                   # -1 : cut '-' place
+        leftsize = max(i, j) - 1                   # -1 : cut '-' prefix
         top    = '{:>{leftsize}}'.format(self.seq1[1:i], leftsize=leftsize)
         middle = ' ' * leftsize
         bottom = '{:>{leftsize}}'.format(self.seq2[1:j], leftsize=leftsize)
 
         # aligned body
         for path in self.pathcode:
+            print('[%s,%s]:%s' % (i, j, path))
             if path == '0':
                 top    += self.seq1[i]
                 middle += '|' if self.seq1[i] == self.seq2[j] else '*'
@@ -159,7 +160,7 @@ class Align:
         middle += ' ' * rightsize
         bottom += '{:<{rightsize}}'.format(self.seq2[n:], rightsize=rightsize)
 
-        top = top.replace(' ', '-')
+        top = top.replace(' ', '-')       # for un-aligned part
         bottom = bottom.replace(' ', '-')
         res = "\n%s\n%s\n%s\n" % (top, middle, bottom)
         self.alignedseq1 = top
