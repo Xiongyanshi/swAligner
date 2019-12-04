@@ -80,10 +80,6 @@ class Align:
                     self.scoremat[i, j] = max(d,l,u)
                     self.tracemat[i, j] = [d, l, u].index(max(d,l,u))
 
-        print(self.scoremat)
-        print()
-        #print(self.tracemat)
-
     def __traceback(self):
         self.maxscore = self.scoremat.max()
         self.maxscorei = np.unravel_index(self.scoremat.argmax(),
@@ -102,7 +98,7 @@ class Align:
         self.pathcode = ''
         i, j = self.end
         while not reachEnd(self, i, j):
-            print('[%s,%s]< ' % (i, j), end='')
+            #print('[%s,%s]<' % (i, j), end='')
             direction = str(self.tracemat[i,j])
             self.pathcode = direction + self.pathcode
             if direction == '0':
@@ -112,13 +108,9 @@ class Align:
                 j -= 1
             elif direction == '2':
                 i -= 1
-        self.start = [i,j]         # this is the end of tracing back journey,
-                                   # yet start of alignment.
-
-        print(self.start)
-        #print()
-        #print('%s -> %s' % (self.start, self.end))
-        print(self.pathcode)
+        self.start = [i,j]
+        # the end of tracing back journey,
+        # start of alignment segment.
 
     def __makeprintable(self):
         i, j = self.start  # start of aligned base
@@ -133,7 +125,7 @@ class Align:
 
         # aligned body
         for path in self.pathcode:
-            print('[%s,%s]:%s' % (i, j, path))
+            #print('[%s,%s]:%s' % (i, j, path))
             if path == '0':
                 top    += self.seq1[i]
                 middle += '|' if self.seq1[i] == self.seq2[j] else '*'
