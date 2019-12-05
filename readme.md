@@ -50,17 +50,17 @@ g	1	-3	-3	3
 ### Another gap penalty scheme (-g)
 Default gap penalty configuration file is "lib/dna_gap.default.txt" :
 ```
-open=-2
+open=0
 extend=-2
 ```
-It means opening a gap will -2, and extending a gap -2 as well. In other words, there is no difference between opening a gap and extending a gap. As such, "-" match to "A" means -2, "---" match to "ACG" means -6
+It means opening a gap will -2, and extending a gap -2 as well. In other words, there is no difference between opening a gap and extending a gap. As such, "-" match to "A" means -2, "---" match to "ACG" means -2*3 = -6.
 
 But, you may prefer opening a gap cost much more than extending a gap, this will make alignment program trying to find continuous body, for example in lib/dna_gap.1.txt:
 ```
 open=-5
 extend=-2
 ```
-In this way, "-" match to "A" means -5, "---" match to "ACG" means -9 (not -15).
+In this way, "-" match to "A" means -5 + -2*1 =-7, "---" match to "ACG" means -5 + -2*3 = -11.
 
 For instance:
 ```
