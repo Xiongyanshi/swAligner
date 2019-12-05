@@ -1,2 +1,2 @@
-open=-2
+open=0
 extend=-2
